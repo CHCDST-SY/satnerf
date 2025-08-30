@@ -104,9 +104,14 @@ def utm_from_latlon(lats, lons):
 
     n = utm.latlon_to_zone_number(lats[0], lons[0])
     l = utm.latitude_to_zone_letter(lats[0])
-    proj_src = pyproj.Proj("+proj=latlong")
-    proj_dst = pyproj.Proj("+proj=utm +zone={}{}".format(n, l))
-    transformer = Transformer.from_proj(proj_src, proj_dst)
+    
+    # 使用 CRS 类创建坐标系统
+    wgs84 = pyproj.CRS('EPSG:4326')  # WGS84 经纬度
+    utm_zone = f"EPSG:326{n:02d}" if l >= 'N' else f"EPSG:327{n:02d}"  # UTM 北半球/南半球
+    utm_crs = pyproj.CRS(utm_zone)
+    
+    # 创建转换器
+    transformer = pyproj.Transformer.from_crs(wgs84, utm_crs, always_xy=True)
     easts, norths = transformer.transform(lons, lats)
     #easts, norths = pyproj.transform(proj_src, proj_dst, lons, lats)
     return easts, norths

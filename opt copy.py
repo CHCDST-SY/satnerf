@@ -44,7 +44,7 @@ def get_opts():
                         help="GPU that will be used")
 
     # training and network configuration
-    parser.add_argument('--lr', type=float, default=5e-6,
+    parser.add_argument('--lr', type=float, default=5e-4,
                         help='initial learning rate')
     parser.add_argument('--batch_size', type=int, default=1024,
                         help='batch size (number of input rays per iteration)')
@@ -82,51 +82,6 @@ def get_opts():
                         help='dimension of the image-dependent embedding')
     parser.add_argument('--t_embbeding_vocab', type=int, default=30,
                         help='Number of image-dependent embeddings, it needs to be at least the number of training images')
-    
-    
-        # hash 版
-    # parser.add_argument('--bounding_box', type=list[list], default=None,
-    #                     help='bounding box of the dataset')
-    parser.add_argument(
-        "--n_levels", type=int, default=16, help="number of levels in the hashmap"
-    )
-    parser.add_argument(
-        "--n_features_per_level",
-        type=int,
-        default=2,
-        help="number of features per level in the hashmap",
-    )
-    parser.add_argument(
-        "--log2_hashmap_size",
-        type=int,
-        default=19,
-        help="log2 of the size of the hashmap",
-    )
-    parser.add_argument(
-        "--base_resolution",
-        type=int,
-        default=16,
-        help="base resolution for the first hash grid level",
-    )
-    parser.add_argument(
-        "--finest_resolution",
-        type=int,
-        default=512,
-        help="finest resolution for the last hash grid level",
-    )
-    parser.add_argument(
-        "--sh_degree",
-        type=int,
-        default=4,
-        help="Spherical harmonics degree for view/sun dir encoding",
-    )
-    
-    parser.add_argument(
-        "--tv_loss_weight",
-        type=float,
-        default=0.14,
-        help="smoother loss weight",
-    )
 
     args = parser.parse_args()
 

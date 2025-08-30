@@ -3,7 +3,7 @@ This script defines the evaluation metrics and the loss functions
 """
 
 import torch
-from kornia.losses import ssim as ssim_
+import kornia.metrics as K
 
 class NerfLoss(torch.nn.Module):
     def __init__(self):
@@ -19,9 +19,27 @@ class NerfLoss(torch.nn.Module):
         return loss, loss_dict
 
 def uncertainty_aware_loss(loss_dict, inputs, gt_rgb, typ, beta_min=0.05):
-    beta = torch.sum(inputs[f'weights_{typ}'].unsqueeze(-1) * inputs['beta_coarse'], -2) + beta_min
+    print(f"Calculating uncertainty-aware loss for {typ} stage")
+    # beta = torch.sum(inputs[f'weights_{typ}'].unsqueeze(-1) * inputs['beta_coarse'], -2) + beta_min
+    # loss_dict[f'{typ}_color'] = ((inputs[f'rgb_{typ}'] - gt_rgb) ** 2 / (2 * beta ** 2)).mean()
+    # loss_dict[f'{typ}_logbeta'] = (3 + torch.log(beta).mean()) / 2  # +3 to make c_b positive since beta_min = 0.05
+    # return loss_dict
+    
+        
+    weights = inputs[f'weights_{typ}']    # [B, 65, 1]
+    beta = inputs['beta_coarse']          # [B, 64, 1]
+    
+    # 确保使用相同数量的采样点
+    min_samples = min(weights.shape[-1], beta.shape[-2])
+    weights = weights[..., :min_samples]   # 截取到 [B, 64, 1]
+    beta = beta[..., :min_samples, :]      # 保持 [B, 64, 1]
+    
+    # 计算加权 beta
+    beta = torch.sum(weights.unsqueeze(-1) * beta, -2) + beta_min
+    
+    # 计算损失
     loss_dict[f'{typ}_color'] = ((inputs[f'rgb_{typ}'] - gt_rgb) ** 2 / (2 * beta ** 2)).mean()
-    loss_dict[f'{typ}_logbeta'] = (3 + torch.log(beta).mean()) / 2  # +3 to make c_b positive since beta_min = 0.05
+    loss_dict[f'{typ}_logbeta'] = (3 + torch.log(beta).mean()) / 2
     return loss_dict
 
 def solar_correction(loss_dict, inputs, typ, lambda_sc=0.05):
@@ -98,6 +116,8 @@ def load_loss(args):
         loss_function = SNerfLoss(lambda_sc=args.sc_lambda)
     elif args.model == "sat-nerf":
         loss_function = SatNerfLoss(lambda_sc=args.sc_lambda)
+    elif args.model == "sat-nerf-hash":
+        loss_function = SatNerfLoss(lambda_sc=args.sc_lambda)
     else:
         raise ValueError(f'model {args.model} is not valid')
     return loss_function
@@ -116,6 +136,9 @@ def psnr(image_pred, image_gt, valid_mask=None, reduction='mean'):
 def ssim(image_pred, image_gt):
     """
     image_pred and image_gt: (1, 3, H, W)
-    important: kornia==0.5.3
+    Using kornia's SSIM implementation
     """
-    return torch.mean(ssim_(image_pred, image_gt, 3))
+    # kornia's ssim returns structural similarity (higher means more similar)
+    # window_size should be an odd number
+    ssim_val = K.ssim(image_pred, image_gt, window_size=11)
+    return torch.mean(ssim_val)
