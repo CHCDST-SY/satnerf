@@ -1,33 +1,3 @@
-# Sat-NeRF
----
-&#128293; &#128293; **UPDATE JUNE 2023 !!!** Have a look at [EO-NeRF](https://rogermm14.github.io/eonerf/), our latest method for multi-view satellite photogrammetry using neural radiance fields. &#128293; &#128293;
-
----
-
-### [[Project page]](https://centreborelli.github.io/satnerf)
-
-Developed at the [ENS Paris-Saclay, Centre Borelli](https://www.centreborelli.fr/) and accepted at the [CVPR EarthVision Workshop 2022](https://www.grss-ieee.org/events/earthvision-2022/).
-
-### [Sat-NeRF: Learning Multi-View Satellite Photogrammetry With Transient Objects and Shadow Modeling Using RPC Cameras](https://openaccess.thecvf.com/content/CVPR2022W/EarthVision/papers/Mari_Sat-NeRF_Learning_Multi-View_Satellite_Photogrammetry_With_Transient_Objects_and_Shadow_CVPRW_2022_paper.pdf)
-*[Roger Marí](https://scholar.google.com/citations?user=TgpSmIsAAAAJ&hl=en), 
-[Gabriele Facciolo](http://dev.ipol.im/~facciolo/),
-[Thibaud Ehret](https://tehret.github.io/)*
-
-> **Abstract:** *We introduce the Satellite Neural Radiance Field (Sat-NeRF), a new end-to-end model for learning multi-view satellite photogrammetry in the wild. Sat-NeRF combines some of the latest trends in neural rendering with native satellite camera models, represented by rational polynomial coefficient (RPC) functions. The proposed method renders new views and infers surface models of similar quality to those obtained with traditional state-of-the-art stereo pipelines. Multi-date images exhibit significant changes in appearance, mainly due to varying shadows and transient objects (cars, vegetation). Robustness to these challenges is achieved by a shadow-aware irradiance model and uncertainty weighting to deal with transient phenomena that cannot be explained by the position of the sun. We evaluate Sat-NeRF using WorldView-3 images from different locations and stress the advantages of applying a bundle adjustment to the satellite camera models prior to training. This boosts the network performance and can optionally be used to extract additional cues for depth supervision.*
-
-If you find this code or work helpful, please cite:
-```
-@inproceedings{mari2022sat,
-  title={{Sat-NeRF}: Learning Multi-View Satellite Photogrammetry With Transient Objects and Shadow Modeling Using {RPC} Cameras},
-  author={Mar{\'\i}, Roger and Facciolo, Gabriele and Ehret, Thibaud},
-  booktitle={2022 IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)},
-  pages={1310-1320},
-  year={2022}
-}
-```
-
----
-
 
 ## 1. Setup and Data
 1. This project works with multiple conda environments, named `satnerf`, `s2p` and `ba`.
