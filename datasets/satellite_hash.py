@@ -151,6 +151,11 @@ class SatelliteDataset_hash(Dataset):
         assert os.path.exists(root_dir), f"root_dir {root_dir} does not exist"
         assert os.path.exists(img_dir), f"img_dir {img_dir} does not exist"
 
+
+        self.center = None
+        self.range = None
+        self.bounding_box = None
+
         # load scaling params
         if not os.path.exists(f"{self.json_dir}/scene.loc"):
             self.init_scaling_params()
@@ -213,8 +218,8 @@ class SatelliteDataset_hash(Dataset):
         print("Could not find a scene.loc file in the root directory, creating one...")
         print("Warning: this can take some minutes")
 
-        min_bound = [500, 500, 500]
-        max_bound = [-500, -500, -500]
+        min_bound = [5000, 5000, 5000]
+        max_bound = [-5000, -5000, -5000]
 
         def find_min_max(pt):
             for i in range(3):
@@ -235,25 +240,12 @@ class SatelliteDataset_hash(Dataset):
                 rpcm.RPCModel(d["rpc"], dict_format="rpcm"), 1.0 / self.img_downscale
             )
             min_alt, max_alt = float(d["min_alt"]), float(d["max_alt"])
+            print(f"Processing {d['img']} with altitudes in [{min_alt}, {max_alt}]")
             cols, rows = np.meshgrid(np.arange(w), np.arange(h))
             rays = get_rays(cols.flatten(), rows.flatten(), rpc, min_alt, max_alt)
-            near_points = rays[:, :3]
-            far_points = rays[:, :3] + rays[:, 7:8] * rays[:, 3:6]
-            # rays_o = rays[:, :3]
-
-            for i in [0, w - 1, h * w - w, h * w - 1]:
-                min_point = near_points[i, :]
-                max_point = far_points[i, :]
-                # points += [min_point, max_point]
-                find_min_max(min_point)
-                find_min_max(max_point)
-
+            
             all_rays += [rays]
 
-        self.bounding_box = (
-            torch.tensor(min_bound) - torch.tensor([0.1, 0.1, 0.0001]),
-            torch.tensor(max_bound) + torch.tensor([0.1, 0.1, 0.0001]),
-        )
 
         all_rays = torch.cat(all_rays, 0)
         near_points = all_rays[:, :3]
@@ -267,12 +259,46 @@ class SatelliteDataset_hash(Dataset):
         d["Y_scale"], d["Y_offset"] = float(y_scale), float(y_offset)
         z_scale, z_offset = sat_utils.rpc_scaling_params(all_points[:, 2])
         d["Z_scale"], d["Z_offset"] = float(z_scale), float(z_offset)
+
+        print(d)
+        
+        
+        # 计算bounding box
+        self.center = torch.tensor(
+            [float(d["X_offset"]), float(d["Y_offset"]), float(d["Z_offset"])]
+        )
+        self.range = torch.max(
+            torch.tensor(
+                [float(d["X_scale"]), float(d["Y_scale"]), float(d["Z_scale"])]
+            )
+        )
+        
+        
+        all_rays = self.normalize_rays(all_rays)
+        near_points = all_rays[:, :3]
+        far_points = all_rays[:, :3] + all_rays[:, 7:8] * all_rays[:, 3:6]
+        # rays_o = rays[:, :3]
+
+        for i in [0, w - 1, h * w - w, h * w - 1]:
+            min_point = near_points[i, :]
+            max_point = far_points[i, :]
+            # points += [min_point, max_point]
+            find_min_max(min_point)
+            find_min_max(max_point)
+        
+        self.bounding_box = (
+            torch.tensor(min_bound) - torch.tensor([0.1, 0.1, 0.0001]),
+            torch.tensor(max_bound) + torch.tensor([0.1, 0.1, 0.0001]),
+        )
         # convert torch tensors to JSON-serializable list format: [[minx,miny,minz],[maxx,maxy,maxz]]
         d["bounding_box"] = [
             [float(x) for x in self.bounding_box[0].tolist()],
             [float(x) for x in self.bounding_box[1].tolist()],
         ]
+        
         print(d)
+        
+        
         sat_utils.write_dict_to_json(d, f"{self.json_dir}/scene.loc")
         print("... done !")
 

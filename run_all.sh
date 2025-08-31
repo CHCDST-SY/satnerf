@@ -96,7 +96,11 @@ python3 main.py --model sat-nerf --exp_name JAX_068_ds1_sat-nerf --gpu_id 0
 --logs_dir /home/sy/code/satdataset/SatNeRF_output/logs 
 --ckpts_dir /home/sy/code/satdataset/SatNeRF_output/ckpts
 
-python3 main_hash.py --model sat-nerf-hash --exp_name JAX_068_ds1_sat-nerf --root_dir /root/autodl-tmp/satnerf_datasets/root_dir/crops_rpcs_ba_v2/JAX_068 --img_dir /root/autodl-tmp/satnerf_datasets/DFC2019/Track3-RGB-crops/JAX_068 --cache_dir /root/autodl-tmp/satnerf_datasets/SatNeRF/cache_dir/crops_rpcs_ba_v2/JAX_068_ds1 --gt_dir /root/autodl-tmp/satnerf_datasets/DFC2019/Track3-Truth --logs_dir /root/autodl-tmp/satnerf_datasets/SatNeRF_output/logs --ckpts_dir /root/autodl-tmp/satnerf_datasets/SatNeRF_output/ckpts --gpu_id 0
 
+python3 main_hash.py --model sat-nerf-hash --exp_name JAX_068_ds1_sat-nerf --root_dir /root/autodl-tmp/satnerf_datasets/root_dir/crops_rpcs_ba_v2/JAX_068 --img_dir /root/autodl-tmp/satnerf_datasets/DFC2019/Track3-RGB-crops/JAX_068 --cache_dir /root/autodl-tmp/satnerf_datasets/SatNeRF/cache_dir/crops_rpcs_ba_v2/JAX_068_ds1 --gt_dir /root/autodl-tmp/satnerf_datasets/DFC2019/Track3-Truth --logs_dir /root/autodl-tmp/satnerf_datasets/SatNeRF_output/logs --ckpts_dir /root/autodl-tmp/satnerf_datasets/SatNeRF_output/ckpts --gpu_id 0
 tensorboard --logsdir=/root/autodl-tmp/satnerf_datasets/SatNeRF_output/logs
+
+
+python3 main_hash.py --model sat-nerf-hash --exp_name JAX_068_ds1_sat-nerf --root_dir /home/sy/code/satdataset/root_dir/crops_rpcs_ba_v2/JAX_068 --img_dir /home/sy/code/satdataset/DFC2019/Track3-RGB-crops/JAX_068 --cache_dir /home/sy/code/satdataset/cache_dir/crops_rpcs_ba_v2/JAX_068_ds1 --gt_dir /home/sy/code/satdataset/DFC2019/Track3-Truth --logs_dir /home/sy/code/satdataset/SatNeRF_output/logs --ckpts_dir /home/sy/code/satdataset/SatNeRF_output/ckpts --gpu_id 0
+tensorboard --logdir=/home/sy/code/satdataset/SatNeRF_output/logs
 

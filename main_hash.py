@@ -218,16 +218,16 @@ class NeRF_pl(pl.LightningModule):
         ts = None if not self.use_ts else batch["color"]["ts"].squeeze() # (B, 1)
 
         # 首个 batch 做设备检查，定位潜在 CPU 张量
-        if self.train_steps == 1:
-            try:
-                model_dev = next(self.nerf_coarse.parameters()).device
-                hash_dev = getattr(self.nerf_coarse, 'hash_embedder', None)
-                hash_dev = next(hash_dev.parameters()).device if hash_dev is not None else 'N/A'
-                emb_dev = self.embedding_t.weight.device if hasattr(self, 'embedding_t') else 'N/A'
-                self.print(f"[DEV] model: {model_dev}, hash: {hash_dev}, t-emb: {emb_dev}")
-            except Exception:
-                pass
-            self.print(f"[DEV] rays: {rays.device}, rgbs: {rgbs.device}, ts: {ts.device if ts is not None else None}")
+        # if self.train_steps == 1:
+        #     try:
+        #         model_dev = next(self.nerf_coarse.parameters()).device
+        #         hash_dev = getattr(self.nerf_coarse, 'hash_embedder', None)
+        #         hash_dev = next(hash_dev.parameters()).device if hash_dev is not None else 'N/A'
+        #         emb_dev = self.embedding_t.weight.device if hasattr(self, 'embedding_t') else 'N/A'
+        #         self.print(f"[DEV] model: {model_dev}, hash: {hash_dev}, t-emb: {emb_dev}")
+        #     except Exception:
+        #         pass
+        #     self.print(f"[DEV] rays: {rays.device}, rgbs: {rgbs.device}, ts: {ts.device if ts is not None else None}")
 
         results = self(rays, ts)
         if 'beta_coarse' in results and self.get_current_epoch(self.train_steps) < 2:
@@ -236,15 +236,15 @@ class NeRF_pl(pl.LightningModule):
             loss, loss_dict = self.loss(results, rgbs)
         self.args.noise_std *= 0.9
 
-        if self.depth:
-            tmp = self(batch["depth"]["rays"], batch["depth"]["ts"].squeeze())
-            kp_depths = torch.flatten(batch["depth"]["depths"][:, 0])
-            kp_weights = 1. if self.args.ds_noweights else torch.flatten(batch["depth"]["depths"][:, 1])
-            loss_depth, tmp = self.depth_loss(tmp, kp_depths, kp_weights)
-            if self.train_steps < self.ds_drop :
-                loss += loss_depth
-            for k in tmp.keys():
-                loss_dict[k] = tmp[k]
+        # if self.depth:
+        #     tmp = self(batch["depth"]["rays"], batch["depth"]["ts"].squeeze())
+        #     kp_depths = torch.flatten(batch["depth"]["depths"][:, 0])
+        #     kp_weights = 1. if self.args.ds_noweights else torch.flatten(batch["depth"]["depths"][:, 1])
+        #     loss_depth, tmp = self.depth_loss(tmp, kp_depths, kp_weights)
+        #     if self.train_steps < self.ds_drop :
+        #         loss += loss_depth
+        #     for k in tmp.keys():
+        #         loss_dict[k] = tmp[k]
 
         if self.args.model == "sat-nerf-hash":  # 使用哈希编码
             n_levels = self.args.n_levels  # 哈希表层数
@@ -267,7 +267,7 @@ class NeRF_pl(pl.LightningModule):
             loss = loss + self.args.tv_loss_weight * TV_loss  # 添加到总损失
 
             # 1000步后关闭TV损失
-            if self.train_steps > 1000:
+            if self.train_steps > 10:
                 self.args.tv_loss_weight = 0.0
 
 
@@ -281,14 +281,45 @@ class NeRF_pl(pl.LightningModule):
             self.log("train/{}".format(k), loss_dict[k])
 
         self.log('train_psnr', psnr_, on_step=True, on_epoch=True, prog_bar=True)
+        
+        
+        # if "h" in batch and "w" in batch:
+        #     W, H = batch["w"], batch["h"]
+        # else:
+        #     W = H = int(torch.sqrt(torch.tensor(rays.shape[0]).float())) # assume squared images
+        # img = results[f'rgb_{typ}'].view(H, W, 3).permute(2, 0, 1).cpu()  # (3, H, W)
+        # img_gt = rgbs.view(H, W, 3).permute(2, 0, 1).cpu()  # (3, H, W)
+        # depth = train_utils.visualize_depth(results[f'depth_{typ}'].view(H, W))  # (3, H, W)
+        # stack = torch.stack([img_gt, img, depth])  # (3, 3, H, W)
+        # split = 'train'
+        # # 直接使用 GT_pred_depth，不添加额外的子目录
+        # self.logger.experiment.add_images('{}/GT_pred_depth'.format(split), stack, self.train_steps)  # 使用 train_steps 作为 global_step
+
+        
+        
+        
+        
+        
         return {'loss': loss}
 
     def validation_step(self, batch, batch_nb):
+        
         # In sanity-check stage, Lightning calls a few validation batches before training.
         # To reduce CPU, skip heavy visualization/DSM/MAE when global_step==0 and early batches.
         rays, rgbs = batch["rays"], batch["rgbs"]
         rays = rays.squeeze()  # (H*W, 3)
         rgbs = rgbs.squeeze()  # (H*W, 3)
+        
+        
+        
+                # if self.train_steps == 1:
+        self.print(f"rays device: {rays.device}, shape: {rays.shape}")
+        self.print(f"rgbs device: {rgbs.device}, shape: {rgbs.shape}")
+
+        self.print(f"batch keys: {batch.keys()}")
+        # self.print(f"type of batch['color']: {type(batch['color'])}")
+        
+        
         if self.args.model == "sat-nerf":
             t = predefined_val_ts(batch["src_id"][0])
             device = rays.device
@@ -300,8 +331,40 @@ class NeRF_pl(pl.LightningModule):
         
         else:
             ts = None
+            
+        if ts is not None:
+            self.print(f"ts device: {ts.device}, shape: {ts.shape}")
+        
+            
         results = self(rays, ts)
         loss, loss_dict = self.loss(results, rgbs)
+        
+        
+        
+        # ------------------------------
+        if self.args.model == "sat-nerf-hash":  # 使用哈希编码
+            n_levels = self.args.n_levels  # 哈希表层数
+            min_res = self.args.base_resolution  # 最小分辨率
+            max_res = self.args.finest_resolution  # 最大分辨率
+            log2_hashmap_size = self.args.log2_hashmap_size  # 哈希表大小
+
+            # 对每一层哈希表计算TV损失
+            TV_loss = sum(
+                total_variation_loss(
+                    self.models["coarse_embed_fn"].embeddings[i],  # 第i层哈希表权重
+                    min_res,
+                    max_res,
+                    i,
+                    log2_hashmap_size,
+                    n_levels=n_levels,
+                )
+                for i in range(n_levels)
+            )
+            loss = loss + self.args.tv_loss_weight * TV_loss  # 添加到总损失
+        
+        # ------------------------------
+        
+        
 
         self.is_validation_image = True
         if self.args.data == 'sat' and batch_nb == 0:
@@ -317,6 +380,7 @@ class NeRF_pl(pl.LightningModule):
         depth = train_utils.visualize_depth(results[f'depth_{typ}'].view(H, W))  # (3, H, W)
         stack = torch.stack([img_gt, img, depth])  # (3, 3, H, W)
         split = 'val' if self.is_validation_image else 'train'
+        # 直接使用 GT_pred_depth，不添加额外的子目录
         sample_idx = batch_nb - 1 if self.is_validation_image else batch_nb
         self.logger.experiment.add_images('{}_{}/GT_pred_depth'.format(split, sample_idx), stack, self.global_step)
 
@@ -389,7 +453,7 @@ def main():
                          accelerator="gpu",
                          deterministic=True,
                          benchmark=True,
-                         num_sanity_val_steps=2,
+                         num_sanity_val_steps=0,  # 跳过验证步骤
                          check_val_every_n_epoch=1,
                          profiler="simple",
                          enable_model_summary=True)

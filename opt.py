@@ -44,7 +44,7 @@ def get_opts():
                         help="GPU that will be used")
 
     # training and network configuration
-    parser.add_argument('--lr', type=float, default=5e-6,
+    parser.add_argument('--lr', type=float, default=5e-7,
                         help='initial learning rate')
     parser.add_argument('--batch_size', type=int, default=1024,
                         help='batch size (number of input rays per iteration)')
@@ -88,7 +88,7 @@ def get_opts():
     # parser.add_argument('--bounding_box', type=list[list], default=None,
     #                     help='bounding box of the dataset')
     parser.add_argument(
-        "--n_levels", type=int, default=16, help="number of levels in the hashmap"
+        "--n_levels", type=int, default=8, help="number of levels in the hashmap"
     )
     parser.add_argument(
         "--n_features_per_level",
